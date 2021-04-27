@@ -39,9 +39,9 @@ for ex in valid_data.keys() :
 
 num_examples = len(files) * 3
 
-n_octaves = 7.5
-bins_per_octave = 48
-hop_length = 256
+n_octaves = 7
+bins_per_octave = 36
+hop_length = 128
 timbre_data = np.zeros((int(bins_per_octave*n_octaves), num_examples))
 examples_processed = 0
 thresh = 0.1

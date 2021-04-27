@@ -20,11 +20,11 @@ class vae_cqt(nn.Module):
 
         # encoder - let's try two layers
         
-        # INPUT: 360 CQT bins
+        # INPUT: 252 CQT bins
         self.encoding_layers = nn.Sequential(
-            nn.Linear(360, 256),
+            nn.Linear(252, 128),
             nn.ReLU(),
-            nn.Linear(256, 64, bias=False),
+            nn.Linear(128, 64, bias=False),
             nn.ReLU(),
             #nn.Linear(128, 64, bias=False),
             #nn.ReLU()
@@ -39,9 +39,9 @@ class vae_cqt(nn.Module):
         self.decoder = nn.Sequential(
             nn.Linear(16, 64),
             nn.ReLU(),
-            nn.Linear(64, 256, bias=False),
+            nn.Linear(64, 128, bias=False),
             nn.ReLU(),
-            nn.Linear(256, 360, bias=False),
+            nn.Linear(128, 252, bias=False),
             nn.ReLU() # necessary? we do want only >= 0 outputs though
         )
     # end constructor

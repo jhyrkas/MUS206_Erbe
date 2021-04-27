@@ -12,8 +12,8 @@ if __name__ == '__main__' :
     length = 3 # seconds
     hop_length = 128
     n_reps = length * int(fs / hop_length)
-    n_octaves = 7.5
-    bins_per_octave = 48
+    n_octaves = 7
+    bins_per_octave = 36
     gain = 0.75
     modulate = len(sys.argv) > 1 and int(sys.argv[1]) == 1
 
@@ -29,15 +29,15 @@ if __name__ == '__main__' :
 
     examples = np.random.choice(np.arange(timbre_data.shape[0]), size=10, replace=False)
     for i in range(10) :
-        X = timbre_data[examples[i], :].reshape(1, 360)
+        X = timbre_data[examples[i], :].reshape(1, 252)
         f0 = pitch_data[examples[i], :].reshape(1, 1)
         mu, logvar = vae.encode(X)
         z = vae.reparam_trick(mu, logvar)
         X_hat = vae.decode(z).detach()
 
-        x = librosa.griffinlim_cqt(np.repeat(X.numpy().reshape(360,1), n_reps, axis=1), sr=fs,
+        x = librosa.griffinlim_cqt(np.repeat(X.numpy().reshape(252,1), n_reps, axis=1), sr=fs,
                 hop_length = hop_length, bins_per_octave = bins_per_octave)
-        x_hat = librosa.griffinlim_cqt(np.repeat(X_hat.detach().numpy().reshape(360,1), n_reps, axis=1), sr=fs, 
+        x_hat = librosa.griffinlim_cqt(np.repeat(X_hat.detach().numpy().reshape(252,1), n_reps, axis=1), sr=fs, 
                 hop_length = hop_length, bins_per_octave = bins_per_octave)
         x = gain * (x / np.max(np.abs(x)))
         x_hat = gain * (x_hat / np.max(np.abs(x_hat)))
@@ -47,7 +47,7 @@ if __name__ == '__main__' :
             z_mod = np.repeat(z.detach().numpy(), n_reps, axis=0)
             lfo = 1.0 * np.sin(2*np.pi*np.linspace(0, 1, n_reps)).reshape(n_reps, 1)
             z_mod = z_mod + lfo
-            X_hat_mod = np.zeros((360, n_reps))
+            X_hat_mod = np.zeros((252, n_reps))
             for j in range(n_reps) :
                 next_z = torch.from_numpy(z_mod[j,:]).float()
                 X_hat_mod[:,j] = vae.decode(next_z).detach().numpy()
