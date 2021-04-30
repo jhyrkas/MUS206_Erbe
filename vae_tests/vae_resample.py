@@ -17,9 +17,12 @@ if __name__ == '__main__' :
         vae.load_state_dict(torch.load('vae_stft_model_params.pytorch'))
         vae.eval()
         timbre_data = np.load('data/timbre_data.npy').T
+        good_rows = np.max(timbre_data, axis=1) > 0
+        timbre_data = timbre_data[good_rows,:]
         timbre_data = timbre_data / np.max(timbre_data, axis=1).reshape(timbre_data.shape[0], 1)
         timbre_data = torch.from_numpy(timbre_data).float()
         pitch_data = np.load('data/pitch_data.npy')
+        pitch_data = pitch_data[good_rows]
         #pitch_data = torch.from_numpy(np.resize(pitch_data, ((len(pitch_data), 1)))).float()
         fs = 16000
         hop_length = 512
