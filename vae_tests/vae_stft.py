@@ -88,15 +88,21 @@ if __name__ == '__main__' :
     # load data
     # i should probably normalize the data....
     timbre_data = np.load('data/timbre_data.npy').T
+    print(timbre_data.shape)
+    good_rows = np.max(timbre_data, axis=1) > 0
+    print(good_rows.shape)
+    timbre_data = timbre_data[good_rows,:]
+    print(timbre_data.shape)
     timbre_data = timbre_data / np.max(timbre_data, axis=1).reshape(timbre_data.shape[0], 1)
     timbre_data = torch.from_numpy(timbre_data).float()
     pitch_data = np.load('data/pitch_data.npy') # this will actually be used later, so we don't really need it here
+    pitch_data = pitch_data[good_rows]
 
     vae = vae_stft()
     optimizer = torch.optim.Adam(vae.parameters()) # use default learning rate and other params
     num_epochs = 20
     batch_size = 10
-    beta = 0.0005 # beta-vae
+    beta = 0.0000 # beta-vae
     beta_update = beta / 10
     bbeta = beta_update
 

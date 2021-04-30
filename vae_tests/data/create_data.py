@@ -14,8 +14,7 @@ with open('nsynth-test/examples.json') as f:
 
 for ex in test_data.keys() :
     files.append('nsynth-test/audio/' + ex + '.wav')
-    for i in range(3) :
-        f0s.append(mtof(test_data[ex]['pitch']))
+    f0s.append(mtof(test_data[ex]['pitch']))
 
 # validation data
 with open('nsynth-valid/examples.json') as f:
@@ -23,38 +22,37 @@ with open('nsynth-valid/examples.json') as f:
 
 for ex in valid_data.keys() :
     files.append('nsynth-valid/audio/' + ex + '.wav')
-    for i in range(3) :
-        f0s.append(mtof(valid_data[ex]['pitch']))
+    f0s.append(mtof(valid_data[ex]['pitch']))
 
-'''
+
 # training data
 with open('nsynth-train/examples.json') as f:
   valid_data = json.load(f)
 
 for ex in valid_data.keys() :
     files.append('nsynth-train/audio/' + ex + '.wav')
-    for i in range(3) :
-        f0s.append(mtof(valid_data[ex]['pitch']))
-'''
+    f0s.append(mtof(valid_data[ex]['pitch']))
 
-num_examples = len(files) * 3
+num_examples = len(files)
 
 nfft = 2048
 freq_size = nfft // 2 + 1
 timbre_data = np.zeros((freq_size, num_examples))
 examples_processed = 0
+thresh = 0.1
+hop_length = nfft // 4 # librosa default
+fps = 16000 / hop_length # fps
+index = round(0.5 * fps) # half second in
 
 for i in range(len(files)) :
     ex = files[i]
     sig, fs = librosa.core.load(ex, sr = None)
     spect = np.abs(librosa.stft(sig, n_fft = nfft))
-    # spect of top ten loudest frames to try to avoid silence
-    spect_sum = np.sum(spect, axis = 0).flatten()
-    top_three = spect_sum.argsort()[-3:][::-1]
-    for j in range(len(top_three)) :
-        c = top_three[j]
-        timbre_data[:,(3*i)+j] = spect[:, c]
-        examples_processed += 1
+    timbre_data[:,i] = spect[:,index]
+    examples_processed += 1
+    if examples_processed / len(files) > thresh :
+        print(thresh)
+        thresh += 0.1
 
 assert(examples_processed == num_examples)
 
