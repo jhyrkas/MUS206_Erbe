@@ -75,10 +75,10 @@ if __name__ == '__main__' :
         f0_ = np.mean(f0_frames[voiced_]) if np.sum(voiced_) > 0 else 0
         f0_hat = np.mean(f0_hat_frames[voiced_hat]) if np.sum(voiced_hat) > 0 else 0
         print(str(f0) + '\t' + str(f0_) + '\t' + str(f0_hat))
-        new_fs = 48000
+        cycle_samps = 512 # for max's cycle object
+        new_fs = math.ceil(cycle_samps * f0)
         new_x_hat = librosa.resample(x_hat, fs, new_fs)
         new_x_hat = new_x_hat / np.max(np.abs(new_x_hat))
-        cycle_samps = int(round(new_fs/f0_hat))
         start_index = new_fs//2 # avoid silence at beginning? 
         looping = True
         while looping and start_index < len(new_x_hat):
