@@ -2,6 +2,7 @@ import librosa
 import math
 import numpy as np
 import sounddevice as sd
+import soundfile as sf
 import torch
 import sys
 
@@ -48,7 +49,7 @@ if __name__ == '__main__' :
         data_size = 252
 
     #examples = np.random.choice(np.arange(timbre_data.shape[0]), size=10, replace=False)
-    low_pitches = np.where(np.logical_and(pitch_data < 220, pitch_data > 60))[0] # tuple for some reason?
+    low_pitches = np.where(np.logical_and(pitch_data < 1000, pitch_data > 60))[0] # tuple for some reason?
     examples = np.random.choice(low_pitches, size=10, replace=False)
     for i in range(10) :
         X = timbre_data[examples[i], :].reshape(1, data_size)
@@ -88,11 +89,12 @@ if __name__ == '__main__' :
                 start_index += 1
 
         if start_index + cycle_samps <= len(new_x_hat) :
-            sd.play(x_hat, fs)
-            sd.wait()
-            sig_rep = np.tile(new_x_hat[start_index:start_index+cycle_samps], int(round((3*new_fs)/cycle_samps)))
-            sd.play(sig_rep * 0.8, new_fs)
-            sd.wait()
+            #sd.play(x_hat, fs)
+            #sd.wait()
+            #sig_rep = np.tile(new_x_hat[start_index:start_index+cycle_samps], int(round((3*new_fs)/cycle_samps)))
+            #sd.play(sig_rep * 0.8, new_fs)
+            #sd.wait()
+            sf.write('output' + str(i) + '.wav', new_x_hat[start_index:start_index+cycle_samps], 44100) # don't think fs matters?
         else :
             print(new_x_hat[0:cycle_samps])
         
