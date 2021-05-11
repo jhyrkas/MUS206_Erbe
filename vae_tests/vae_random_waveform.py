@@ -48,7 +48,7 @@ if __name__ == '__main__' :
         f0_hat_frames, voiced_hat, _ = librosa.pyin(x_hat, librosa.note_to_hz('C2'), librosa.note_to_hz('C7'), sr=fs)
         f0_hat = np.mean(f0_hat_frames[voiced_hat]) if np.sum(voiced_hat) > 10 else 0 # at least 10 voiced frames?
         print(str(f0_hat))
-        print(z)
+        #print(z)
         if f0_hat == 0 :
             continue
         cycle_samps = 512 # for max's cycle object
