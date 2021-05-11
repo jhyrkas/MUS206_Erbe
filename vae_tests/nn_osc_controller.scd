@@ -3,12 +3,22 @@ s.boot;
 (
 var fa;
 fa = {
-    | p0 = 0, p1 = 0 |
+    | param = 0, val = 0 |
     b = NetAddr.new("127.0.0.1", 1337);
-    b.sendMsg("/param0", p0);
-    b.sendMsg("/param1", p1);
-    [p0, p1];
+    b.sendMsg("/param" ++ param, val);
+    [param, val];
 };
 
-fa.value(1,0);
+fa.value(4,1.3);
+)
+
+(
+var fb;
+fb = {
+    b = NetAddr.new("127.0.0.1", 1337);
+    b.sendMsg("/generate");
+    0
+};
+
+fb.value();
 )

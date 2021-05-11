@@ -16,20 +16,22 @@ from vae_stft import vae_stft
 # osc code based on https://python-osc.readthedocs.io/en/latest/dispatcher.html
 
 z = np.zeros(16)
+wt = np.zeros(512)
 
 def update_z(address: str, *args: List[Any]) -> None:
     global z
-    if not address[:-1] == "/param" : 
+    if not address[:6] == "/param" : 
         return
 
     # not doing much error checking here
-    i = int(address[-1])
+    i = int(address[6:])
     v = float(args[0])
     z[i] = v
     print(z)
 
-def generate_wavetable(vae) :
+def update_wavetable(address: str, fixed_args: List[Any], *osc_args: List[Any]) -> None :
     global z
+    vae = fixed_args[0]
     gain = 0.75
     z_size = 16
     fs = 16000
@@ -56,7 +58,8 @@ def generate_wavetable(vae) :
         else :
             start_index += 1
     if start_index + cycle_samps <= len(new_x_hat) :
-        table = new_x_hat[start_index:start_index+cycle_samps] # do something with this later
+        wt = new_x_hat[start_index:start_index+cycle_samps] # do something with this later
+        print(wt)
         return True
     else :
         return False
@@ -71,7 +74,7 @@ if __name__ == '__main__' :
     vae.eval()
 
     dispatcher.map("/param*", update_z)
+    dispatcher.map("/generate", update_wavetable, vae)
     server = BlockingOSCUDPServer(("127.0.0.1", 1337), dispatcher)
     while True :
         server.handle_request()
-        print(generate_wavetable(vae))
