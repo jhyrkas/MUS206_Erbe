@@ -11,7 +11,7 @@ fa = {
     [param, val];
 };
 
-fa.value(4,1.3);
+fa.value(15, 2.0.rand - 1.0);
 )
 
 // sending a message to generate the wavetable
@@ -57,13 +57,16 @@ var recvFunc;
 //recv_n = NetAddr.new("127.0.0.1", 7771); // receiving here
 recvFunc = OSCFunc({
 	| msg, time, addr, recvPort |
-    var new_buf;
-    new_buf = toFloatArray.(msg[1]);
+    var array, new_buf;
+    array = toFloatArray.(msg[1]);
     //s.sendMsg(\b_alloc, i, 512);
 
     //s.performList(\sendMsg, \b_gen, i, \sine1, 7, a);
     // the argument '7' here is a flag for the \sine1 wave fill method
     // TODO: need to figure out which flag to set?
-    new_buf.postln;
+    new_buf = Buffer.alloc(s, 512);
+    new_buf.loadCollection(array);
 }, '/scRecv', nil, 7771);
 )
+
+{VOsc.ar(0.2, 220, 0.0, 0.3)}.play;
