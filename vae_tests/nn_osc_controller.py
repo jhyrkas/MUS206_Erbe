@@ -18,6 +18,7 @@ from vae_stft import vae_stft
 
 z = np.zeros(16)
 wt = np.zeros(512)
+client = SimpleUDPClient("127.0.0.1", 7771)
 
 def update_z(address: str, *args: List[Any]) -> None:
     global z
@@ -31,6 +32,7 @@ def update_z(address: str, *args: List[Any]) -> None:
     print(z)
 
 def update_wavetable(address: str, fixed_args: List[Any], *osc_args: List[Any]) -> None :
+    global wt
     global z
     vae = fixed_args[0]
     gain = 0.75
@@ -60,10 +62,18 @@ def update_wavetable(address: str, fixed_args: List[Any], *osc_args: List[Any]) 
             start_index += 1
     if start_index + cycle_samps <= len(new_x_hat) :
         wt = new_x_hat[start_index:start_index+cycle_samps] # do something with this later
-        print(wt)
-        return True
+        send_wavetable()
     else :
-        return False
+        print('ERROR IN WAVETABLE GENERATION')
+
+def send_wavetable() :
+    global client
+    global wt
+    tmp = wt.astype(np.float32)
+    builder = osc_message_builder.OscMessageBuilder(address="/scRecv")
+    builder.add_arg(tmp.tobytes(), builder.ARG_TYPE_BLOB)
+    message = builder.build()
+    client.send_message("/scRecv", message)
 
 if __name__ == '__main__' :
     # OSC set up
@@ -77,12 +87,5 @@ if __name__ == '__main__' :
     dispatcher.map("/param*", update_z)
     dispatcher.map("/generate", update_wavetable, vae)
     server = BlockingOSCUDPServer(("127.0.0.1", 1337), dispatcher)
-    client = SimpleUDPClient("127.0.0.1", 7771)
     while True :
         server.handle_request()
-        # send a message after receiving
-        tmp = np.array([(i-256)/512 for i in range(512)])
-        builder = osc_message_builder.OscMessageBuilder(address="/scRecv")
-        builder.add_arg(tmp.tobytes(), builder.ARG_TYPE_BLOB)
-        message = builder.build()
-        client.send_message("/scRecv", message)
