@@ -6,6 +6,7 @@ import soundfile as sf
 import torch
 import sys
 
+from pythonosc import osc_message_builder
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.udp_client import SimpleUDPClient
@@ -76,5 +77,12 @@ if __name__ == '__main__' :
     dispatcher.map("/param*", update_z)
     dispatcher.map("/generate", update_wavetable, vae)
     server = BlockingOSCUDPServer(("127.0.0.1", 1337), dispatcher)
+    client = SimpleUDPClient("127.0.0.1", 7771)
     while True :
         server.handle_request()
+        # send a message after receiving
+        tmp = np.array([(i-256)/512 for i in range(512)])
+        builder = osc_message_builder.OscMessageBuilder(address="/scRecv")
+        builder.add_arg(tmp.tobytes(), builder.ARG_TYPE_BLOB)
+        message = builder.build()
+        client.send_message("/scRecv", message)
