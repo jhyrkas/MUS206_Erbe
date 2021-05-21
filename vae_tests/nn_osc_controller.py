@@ -29,7 +29,6 @@ def update_z(address: str, *args: List[Any]) -> None:
     i = int(address[6:])
     v = float(args[0])
     z[i] = v
-    print(z)
 
 def update_wavetable(address: str, fixed_args: List[Any], *osc_args: List[Any]) -> None :
     global wt

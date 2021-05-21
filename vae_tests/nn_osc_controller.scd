@@ -11,7 +11,10 @@ fa = {
     [param, val];
 };
 
-fa.value(15, 2.0.rand - 1.0);
+16.do {
+    | index |
+    fa.value(index, 2.0.rand - 1.0);
+};
 )
 
 // sending a message to generate the wavetable
@@ -27,7 +30,6 @@ fb.value();
 
 // receiving a message
 (
-
 // from karl
 var toFloatArray = {
     |byte|
@@ -50,23 +52,42 @@ var toFloatArray = {
     };
     return
 };
+// strong assumption that we are receiving 512 arrays
+var toWavetable = {
+    | array |
+    var return = FloatArray.newClear(1024);
+    512.do {
+        | index |
+        var i = index * 2;
+        var index2 = (index + 1) % 512;
+        return[i] = 2*array[index] - array[index2];
+        return[i+1] = array[index2] - array[index];
+    };
+    return
+};
 
-var recv_n;
-var recvFunc;
-
-//recv_n = NetAddr.new("127.0.0.1", 7771); // receiving here
-recvFunc = OSCFunc({
+var recvFunc = OSCFunc({
 	| msg, time, addr, recvPort |
-    var array, new_buf;
+    var array, wavetable;
     array = toFloatArray.(msg[1]);
+    wavetable = toWavetable.(array);
     //s.sendMsg(\b_alloc, i, 512);
 
     //s.performList(\sendMsg, \b_gen, i, \sine1, 7, a);
     // the argument '7' here is a flag for the \sine1 wave fill method
     // TODO: need to figure out which flag to set?
-    new_buf = Buffer.alloc(s, 512);
-    new_buf.loadCollection(array);
+    b = Buffer.alloc(s, 1024);
+    b.loadCollection(wavetable);
+    //b = Buffer.alloc(s, 512);
+    //b.loadCollection(array);
 }, '/scRecv', nil, 7771);
 )
 
-{VOsc.ar(0.2, 220, 0.0, 0.3)}.play;
+// when it's time to play, mess with these parameters
+(
+{VOsc.ar(SinOsc.ar(0.25, 0.0, 0.99, 1.0), 220, 0.0, 0.3)}.play;
+)
+
+(
+{Osc.ar(2, 220, 0.0, 0.3)}.play;
+)
