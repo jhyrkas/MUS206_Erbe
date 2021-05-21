@@ -85,9 +85,9 @@ var recvFunc = OSCFunc({
 
 // when it's time to play, mess with these parameters
 (
-{VOsc.ar(SinOsc.ar(0.25, 0.0, 0.99, 1.0), 220, 0.0, 0.3)}.play;
+{VOsc.ar(SinOsc.ar(0.25, 0.0, 1.99, 2.0), 220 + SinOsc.ar(110, 0.0, 100), 0.0, 0.3)}.play;
 )
 
 (
-{Osc.ar(2, 220, 0.0, 0.3)}.play;
+{Osc.ar(4, 220, 0.0, 0.3)}.play;
 )

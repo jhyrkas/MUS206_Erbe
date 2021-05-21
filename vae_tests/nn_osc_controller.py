@@ -62,6 +62,7 @@ def update_wavetable(address: str, fixed_args: List[Any], *osc_args: List[Any]) 
     if start_index + cycle_samps <= len(new_x_hat) :
         wt = new_x_hat[start_index:start_index+cycle_samps] # do something with this later
         send_wavetable()
+        print('sent wavetable')
     else :
         print('ERROR IN WAVETABLE GENERATION')
 
