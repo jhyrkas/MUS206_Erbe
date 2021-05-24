@@ -1,32 +1,6 @@
 s.boot;
-b = 0; // global buffer num
 
-// sending parameter values
-(
-var fa;
-fa = {
-    | param = 0, val = 0 |
-    b = NetAddr.new("127.0.0.1", 1337);
-    b.sendMsg("/param" ++ param, val);
-    [param, val];
-};
-
-16.do {
-    | index |
-    fa.value(index, 2.0.rand - 1.0);
-};
-)
-
-// sending a message to generate the wavetable
-(
-var fb;
-fb = {
-    b = NetAddr.new("127.0.0.1", 1337);
-    b.sendMsg("/generate");
-};
-
-fb.value();
-)
+// --------- OSC --------
 
 // receiving a message
 (
@@ -83,11 +57,97 @@ var recvFunc = OSCFunc({
 }, '/scRecv', nil, 7771);
 )
 
+// sending parameter values
+(
+var fa;
+fa = {
+    | param = 0, val = 0 |
+    b = NetAddr.new("127.0.0.1", 1337);
+    b.sendMsg("/param" ++ param, val);
+    [param, val];
+};
+
+16.do {
+    | index |
+    fa.value(index, 2.0.rand - 1.0);
+};
+)
+
+// sending a message to generate the wavetable
+(
+var fb;
+fb = {
+    b = NetAddr.new("127.0.0.1", 1337);
+    b.sendMsg("/generate");
+};
+
+fb.value();
+)
+
+// ---------synthesis---------
+
 // when it's time to play, mess with these parameters
 (
-{VOsc.ar(SinOsc.ar(0.25, 0.0, 1.99, 2.0), 220 + SinOsc.ar(110, 0.0, 100), 0.0, 0.3)}.play;
+{VOsc.ar(SinOsc.ar(0.25, 0.0, 1.99, 2.0), 220 + SinOsc.ar(110, 0.0, 10.0), 0.0, 0.3)}.play;
 )
 
 (
-{Osc.ar(4, 220, 0.0, 0.3)}.play;
+{Osc.ar(3, 220, 0.0, 0.3)}.play;
 )
+
+// synth def
+(
+SynthDef.new("nn_wavetable", {
+    |carr_freq = 440, voice_center = 0, voice_sweep = 0, voice_sweep_freq = 0.25, gain = 0.3, duration = 2.0, mod_mult = 1.5, fm_index = 0.0 |
+    var env, mod_wave, voice_wave, carr_wave, stereo_mix;
+    // attack time, release time, peak level
+    env = Env.perc(0.1, duration, 0.3).kr(doneAction: 2);
+    // frequency modulation wave
+    mod_wave = SinOsc.ar(freq: carr_freq * mod_mult, mul: fm_index);
+	// voice_modulation
+	voice_wave = SinOsc.ar(freq: voice_sweep_freq, mul: voice_sweep, add: voice_center);
+    // carrier wave
+	carr_wave = VOsc.ar(bufpos: voice_wave, freq: carr_freq, mul: gain);
+    // still need filter here
+    // stereo mix
+    stereo_mix = Splay.ar(carr_wave);
+    Out.ar(0, stereo_mix);}).add;
+)
+
+(
+var notes, durs, note_stream, dur_stream;
+notes = Pseq([Pseq([82, 84, 87, 91], 4), Pseq([84, 87, 91, 94], 2), Pseq([84, 85, 89, 92], 2)], 4);
+durs = Pseq([0.25], 32*4);
+
+note_stream = notes.asStream();
+dur_stream = durs.asStream();
+
+r = Task({
+    var dur, note, i = 0;
+    while ({
+        i < 63; // this was supposed to be 64 but i kind of like it at 63
+    }, {
+        dur = dur_stream.next;
+        note = note_stream.next.midicps;
+        Synth("nn_wavetable",
+			[carr_freq: note, duration: dur, voice_center: 4.0 * (100.rand / 100.0)]);
+        dur.yield;
+        i = i + 1;
+    });
+
+    while ({
+        i < 128;
+    }, {
+        dur = dur_stream.next;
+        note = note_stream.next.midicps;
+        Synth("nn_wavetable",
+            [carr_freq: note, fm_index: 190.linrand + 10, duration: dur, mod_mult: 0.5 + 1.5.rand,
+			 voice_center: 3.0* (100.rand / 100.0), voice_sweep: 1.0, voice_sweep_freq: 0.25 + 4.75.rand
+		]);
+        dur.yield;
+        i = i + 1;
+    });
+}).play(quant: TempoClock.default.beats); // don't think quantization is working like i want it to
+)
+
+100.rand
