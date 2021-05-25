@@ -55,11 +55,16 @@ var recvFunc = OSCFunc({
     //b = Buffer.alloc(s, 512);
     //b.loadCollection(array);
 }, '/scRecv', nil, 7771);
+
+var recvErrFunc = OSCFunc({
+	| msg, time, addr, recvPort |
+	'error generating wavetable'.postln;
+}, '/scErr', nil, 7771);
 )
 
 // sending parameter values
 (
-var fa;
+var fa, fb;
 fa = {
     | param = 0, val = 0 |
     b = NetAddr.new("127.0.0.1", 1337);
@@ -71,11 +76,8 @@ fa = {
     | index |
     fa.value(index, 2.0.rand - 1.0);
 };
-)
 
 // sending a message to generate the wavetable
-(
-var fb;
 fb = {
     b = NetAddr.new("127.0.0.1", 1337);
     b.sendMsg("/generate");
@@ -88,7 +90,7 @@ fb.value();
 
 // when it's time to play, mess with these parameters
 (
-{VOsc.ar(SinOsc.ar(0.25, 0.0, 1.99, 2.0), 220 + SinOsc.ar(110, 0.0, 10.0), 0.0, 0.3)}.play;
+{VOsc.ar(SinOsc.ar(0.25, 0.0, 1.99, 2.0), 220 + SinOsc.ar(110, 0.0, 0.0), 0.0, 0.3)}.play;
 )
 
 (
@@ -149,5 +151,3 @@ r = Task({
     });
 }).play(quant: TempoClock.default.beats); // don't think quantization is working like i want it to
 )
-
-100.rand

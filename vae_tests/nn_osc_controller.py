@@ -69,11 +69,15 @@ def update_wavetable(address: str, fixed_args: List[Any], *osc_args: List[Any]) 
 def send_wavetable() :
     global client
     global wt
-    tmp = wt.astype(np.float32)
-    builder = osc_message_builder.OscMessageBuilder(address="/scRecv")
-    builder.add_arg(tmp.tobytes(), builder.ARG_TYPE_BLOB)
-    message = builder.build()
-    client.send_message("/scRecv", message)
+    try :
+        tmp = wt.astype(np.float32)
+        builder = osc_message_builder.OscMessageBuilder(address="/scRecv")
+        builder.add_arg(tmp.tobytes(), builder.ARG_TYPE_BLOB)
+        message = builder.build()
+        client.send_message("/scRecv", message)
+    except :
+        # had an infinite value once but i missed the exception type or where it occurred...
+        client.send_message("/scErr", 0) # not sure if we have to send a "message"
 
 if __name__ == '__main__' :
     # OSC set up
