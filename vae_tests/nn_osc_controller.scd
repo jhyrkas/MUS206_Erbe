@@ -132,7 +132,7 @@ random_b.action_({
 )
 
 (
-{Osc.ar(4, 86.1, 0.0, 0.3)}.play;
+{Splay.ar(Osc.ar(1, 86.1, 0.0, 0.3))}.play;
 )
 
 // synth def

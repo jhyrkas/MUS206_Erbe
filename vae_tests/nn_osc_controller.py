@@ -30,10 +30,9 @@ def update_z(address: str, *args: List[Any]) -> None:
     v = float(args[0])
     z[i] = v
 
-def update_wavetable(address: str, fixed_args: List[Any], *osc_args: List[Any]) -> None :
+def update_wavetable(vae) :
     global wt
     global z
-    vae = fixed_args[0]
     gain = 0.75
     z_size = 16
     fs = 16000
@@ -61,46 +60,36 @@ def update_wavetable(address: str, fixed_args: List[Any], *osc_args: List[Any]) 
             start_index += 1
     if start_index + cycle_samps <= len(new_x_hat) :
         wt = new_x_hat[start_index:start_index+cycle_samps] # do something with this later
-        send_wavetable()
-        print('sent wavetable')
+        return True
     else :
         print('ERROR IN WAVETABLE GENERATION')
+        return False
 
-def send_wavetable() :
+def send_wavetable(address: str, fixed_args: List[Any], *osc_args: List[Any]) -> None :
     global client
     global wt
-    try :
-        tmp = wt.astype(np.float32)
-        builder = osc_message_builder.OscMessageBuilder(address="/scRecv")
-        builder.add_arg(tmp.tobytes(), builder.ARG_TYPE_BLOB)
-        message = builder.build()
-        client.send_message("/scRecv", message)
-    except :
-        # had an infinite value once but i missed the exception type or where it occurred...
-        client.send_message("/scErr", 0) # not sure if we have to send a "message"
+    vae = fixed_args[0]
+    if update_wavetable(vae) :
+        try :
+            tmp = wt.astype(np.float32)
+            builder = osc_message_builder.OscMessageBuilder(address="/scRecv")
+            builder.add_arg(tmp.tobytes(), builder.ARG_TYPE_BLOB)
+            message = builder.build()
+            client.send_message("/scRecv", message)
+            print('sent wavetable')
+        except :
+            # had an infinite value once but i missed the exception type or where it occurred...
+            client.send_message("/scErr", 0) # not sure if we have to send a "message"
 
 def listen_to_timbre(address: str, fixed_args: List[Any], *osc_args: List[Any]) -> None :
-    global z
-    vae = fixed_args[0]
-    gain = 0.5
-    z_size = 16
-    fs = 16000
-    length = 3
-    hop_length = 512
-    n_reps = length * int(fs / hop_length)
-    data_size = 1025
-    X_hat = vae.decode(torch.from_numpy(z).float()).detach()
-    x_hat = librosa.griffinlim(np.repeat(X_hat.numpy().reshape(data_size,1), n_reps, axis=1))
-    x_hat = gain * (x_hat / np.max(np.abs(x_hat)))
-    sd.play(x_hat, fs)
-
-def listen_to_timbre2(address: str, fixed_args: List[Any], *osc_args: List[Any]) -> None :
     global wt
-    gain = 0.5
-    fs = 44100
-    print((3*44100) // len(wt))
-    sig = np.tile(wt, (3*44100) // len(wt)) * .666
-    sd.play(sig, fs)
+    vae = fixed_args[0]
+    if update_wavetable(vae) :
+        gain = 0.5
+        fs = 44100
+        print((3*44100) // len(wt))
+        sig = np.tile(wt, (3*44100) // len(wt)) * .666
+        sd.play(sig, fs)
 
 if __name__ == '__main__' :
     # OSC set up
@@ -112,8 +101,8 @@ if __name__ == '__main__' :
     vae.eval()
 
     dispatcher.map("/param*", update_z)
-    dispatcher.map("/generate", update_wavetable, vae)
-    dispatcher.map("/listen", listen_to_timbre2, vae)
+    dispatcher.map("/generate", send_wavetable, vae)
+    dispatcher.map("/listen", listen_to_timbre, vae)
     server = BlockingOSCUDPServer(("127.0.0.1", 1337), dispatcher)
     while True :
         server.handle_request()
