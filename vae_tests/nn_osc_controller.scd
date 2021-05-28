@@ -3,7 +3,7 @@ s.boot;
 // --------- OSC --------
 
 (
-var toFloatArray, toWavetable, recvFunc, recvErrFunc, parameter_func, generate_func, window, ks, generate_b, random_b, size = 32;
+var toFloatArray, toWavetable, recvFunc, recvErrFunc, parameter_func, listen_func, generate_func, window, ks, listen_b, generate_b, random_b, size = 32;
 
 // from karl
 toFloatArray = {
@@ -45,6 +45,7 @@ toWavetable = {
 recvFunc = OSCFunc({
 	| msg, time, addr, recvPort |
     var array, wavetable;
+    "received wavetable".postln;
     array = toFloatArray.(msg[1]);
     wavetable = toWavetable.(array);
     //s.sendMsg(\b_alloc, i, 512);
@@ -54,7 +55,7 @@ recvFunc = OSCFunc({
     // TODO: need to figure out which flag to set?
     b = Buffer.alloc(s, 1024);
     b.loadCollection(wavetable);
-    "received wavetable".postln;
+    "saved wavetable".postln;
     //b = Buffer.alloc(s, 512);
     //b.loadCollection(array);
 }, '/scRecv', nil, 7771);
@@ -72,6 +73,12 @@ parameter_func = {
         | index |
         b.sendMsg("/param" ++ index, val_array[index].value);
     };
+};
+
+// sending a message to listen to the example
+listen_func = {
+    b = NetAddr.new("127.0.0.1", 1337);
+    b.sendMsg("/listen");
 };
 
 // sending a message to generate the wavetable
@@ -97,14 +104,21 @@ ks = Array.new(16);
 	};
 };
 
-generate_b = Button.new(window,Rect(5,210,80,30)).states_([["Generate"]]);
+generate_b = Button.new(window,Rect(5,210,80,30)).states_([["Save WT"]]);
 generate_b.action_({
 	| butt |
     parameter_func.value(ks);
     generate_func.value();
 });
 
-random_b = Button.new(window,Rect(85,210,80,30)).states_([["Randomize"]]);
+listen_b = Button.new(window,Rect(85,210,80,30)).states_([["Listen"]]);
+listen_b.action_({
+	| butt |
+    parameter_func.value(ks);
+    listen_func.value();
+});
+
+random_b = Button.new(window,Rect(165,210,80,30)).states_([["Randomize"]]);
 random_b.action_({
 	| butt |
     16.do { |index| ks[index].value = 1.0.rand}});
@@ -118,7 +132,7 @@ random_b.action_({
 )
 
 (
-{Osc.ar(4, 220, 0.0, 0.3)}.play;
+{Osc.ar(4, 86.1, 0.0, 0.3)}.play;
 )
 
 // synth def
@@ -176,3 +190,6 @@ r = Task({
     });
 }).play(quant: TempoClock.default.beats); // don't think quantization is working like i want it to
 )
+
+OSCFunc.trace(true)
+OSCFunc.trace(false)
