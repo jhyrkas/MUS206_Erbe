@@ -2,10 +2,11 @@ s.boot;
 
 // --------- OSC --------
 
-// receiving a message
 (
+var toFloatArray, toWavetable, recvFunc, recvErrFunc, parameter_func, generate_func, window, ks, generate_b, random_b, size = 32;
+
 // from karl
-var toFloatArray = {
+toFloatArray = {
     |byte|
     var at = 0;
     var many = byte.size / 4;
@@ -27,7 +28,7 @@ var toFloatArray = {
     return
 };
 // strong assumption that we are receiving 512 arrays
-var toWavetable = {
+toWavetable = {
     | array |
     var return = FloatArray.newClear(1024);
     512.do {
@@ -40,7 +41,8 @@ var toWavetable = {
     return
 };
 
-var recvFunc = OSCFunc({
+// receiving a message
+recvFunc = OSCFunc({
 	| msg, time, addr, recvPort |
     var array, wavetable;
     array = toFloatArray.(msg[1]);
@@ -52,49 +54,71 @@ var recvFunc = OSCFunc({
     // TODO: need to figure out which flag to set?
     b = Buffer.alloc(s, 1024);
     b.loadCollection(wavetable);
+    "received wavetable".postln;
     //b = Buffer.alloc(s, 512);
     //b.loadCollection(array);
 }, '/scRecv', nil, 7771);
 
-var recvErrFunc = OSCFunc({
+recvErrFunc = OSCFunc({
 	| msg, time, addr, recvPort |
 	'error generating wavetable'.postln;
 }, '/scErr', nil, 7771);
-)
 
 // sending parameter values
-(
-var fa, fb;
-fa = {
-    | param = 0, val = 0 |
+parameter_func = {
+    | val_array |
     b = NetAddr.new("127.0.0.1", 1337);
-    b.sendMsg("/param" ++ param, val);
-    [param, val];
-};
-
-16.do {
-    | index |
-    fa.value(index, 2.0.rand - 1.0);
+    16.do {
+        | index |
+        b.sendMsg("/param" ++ index, val_array[index].value);
+    };
 };
 
 // sending a message to generate the wavetable
-fb = {
+generate_func = {
     b = NetAddr.new("127.0.0.1", 1337);
     b.sendMsg("/generate");
 };
 
-fb.value();
+//fb.value();
+
+// GUI
+// dims: x-axis position, y-axis position, x-axis length, y-axis length
+window = Window.new("Knobs", Rect(640,730,270,270)).front;
+ks = Array.new(16);
+4.do {
+	| index_i |
+	4.do {
+		| index_j |
+		var tmp_k = Knob.new(window, Rect(10 + 40*index_j, 10 + 40*index_i, size, size));
+        tmp_k.centered = true;
+        tmp_k.value = 0.5;
+		ks.add(tmp_k);
+	};
+};
+
+generate_b = Button.new(window,Rect(5,210,80,30)).states_([["Generate"]]);
+generate_b.action_({
+	| butt |
+    parameter_func.value(ks);
+    generate_func.value();
+});
+
+random_b = Button.new(window,Rect(85,210,80,30)).states_([["Randomize"]]);
+random_b.action_({
+	| butt |
+    16.do { |index| ks[index].value = 1.0.rand}});
 )
 
 // ---------synthesis---------
 
 // when it's time to play, mess with these parameters
 (
-{VOsc.ar(SinOsc.ar(0.25, 0.0, 1.99, 2.0), 220 + SinOsc.ar(110, 0.0, 0.0), 0.0, 0.3)}.play;
+{VOsc.ar(SinOsc.ar(0.25, 0.0, 1.99, 2.0), 220 + SinOsc.ar(110, 0.0, 10.0), 0.0, 0.3)}.play;
 )
 
 (
-{Osc.ar(3, 220, 0.0, 0.3)}.play;
+{Osc.ar(4, 220, 0.0, 0.3)}.play;
 )
 
 // synth def
@@ -118,7 +142,8 @@ SynthDef.new("nn_wavetable", {
 
 (
 var notes, durs, note_stream, dur_stream;
-notes = Pseq([Pseq([82, 84, 87, 91], 4), Pseq([84, 87, 91, 94], 2), Pseq([84, 85, 89, 92], 2)], 4);
+
+notes = Pseq([Pseq([82, 84, 87, 91] - 24, 4), Pseq([84, 87, 91, 94] - 24, 2), Pseq([84, 85, 89, 92] - 24, 2)], 4);
 durs = Pseq([0.25], 32*4);
 
 note_stream = notes.asStream();

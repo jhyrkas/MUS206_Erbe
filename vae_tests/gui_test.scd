@@ -12,7 +12,7 @@ w.front;
 )
 
 (
-var window, ks, generate_b, size = 32;
+var window, ks, generate_b, random_b, size = 32;
 // dims: x-axis position, y-axis position, x-axis length, y-axis length
 window = Window.new("Knobs", Rect(640,730,270,270)).front;
 ks = Array.new(16);
@@ -21,6 +21,8 @@ ks = Array.new(16);
 	4.do {
 		| index_j |
 		var tmp_k = Knob.new(window, Rect(10 + 40*index_j, 10 + 40*index_i, size, size));
+        tmp_k.centered = true;
+        tmp_k.value = 0.5;
 		ks.add(tmp_k);
 	};
 };
@@ -29,7 +31,12 @@ generate_b = Button.new(window,Rect(5,210,80,30)).states_([["Generate"]]);
 generate_b.action_({
 	| butt |
 	var arr = Array.new(16);
-	16.do { |index| arr.add(ks[index].value);};
+    16.do { |index| arr.add((ks[index].value - 0.5) * 2.0)};
 	arr.postln;
 });
+
+random_b = Button.new(window,Rect(85,210,80,30)).states_([["Randomize"]]);
+random_b.action_({
+	| butt |
+    16.do { |index| ks[index].value = 1.0.rand}});
 )
