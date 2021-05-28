@@ -1,6 +1,6 @@
 s.boot;
 
-// --------- OSC --------
+// --------- CONTROLLER --------
 
 (
 var toFloatArray, toWavetable, recvFunc, recvErrFunc, parameter_func, listen_func, generate_func, window, ks, listen_b, generate_b, random_b, size = 32;

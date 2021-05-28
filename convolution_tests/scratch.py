@@ -21,8 +21,8 @@ sig2 = np.zeros(win_len)
 sig2[0] = 1.0
 
 # another test
-sig2 = np.zeros(win_len)
-sig2[0:9] = np.array([0.00390625, 0.03125   , 0.109375  , 0.21875   , 0.2734375 , 0.21875   , 0.109375  , 0.03125   , 0.00390625])
+#sig2 = np.zeros(win_len)
+#sig2[0:9] = np.array([0.00390625, 0.03125   , 0.109375  , 0.21875   , 0.2734375 , 0.21875   , 0.109375  , 0.03125   , 0.00390625])
 
 filter_td = sig2[0:win_len]
 window = sps.windows.hann(win_len)
@@ -37,5 +37,10 @@ for i in range(len(sig) // hop_len) :
     outsig[start:end] += convolved.real
 
 #outsig = sps.fftconvolve(sig, sig2)
+
+# this shouldn't be an issue but it is...find out why
+sig_max = np.max(np.abs(outsig))
+outsig = (outsig / sig_max) * .5
+
 sd.play(outsig, fs)
 sd.wait()
