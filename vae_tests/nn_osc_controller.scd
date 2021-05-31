@@ -71,7 +71,8 @@ parameter_func = {
     b = NetAddr.new("127.0.0.1", 1337);
     16.do {
         | index |
-        b.sendMsg("/param" ++ index, val_array[index].value);
+        var scaled_value = (0.5 - val_array[index].value) * 2.0; // adjust this?
+        b.sendMsg("/param" ++ index, scaled_value);
     };
 };
 
@@ -171,12 +172,12 @@ chord_inst = Pbind(
     \carr_freq, chord_notes.midicps,
     \dur, chord_durs1,
 	\duration, chord_durs2,
-	\voice_center, Pseq([Pwhite(0.0, 3.9, 12), Pwhite(1.5, 2.5, 6)]),
+	\voice_center, Pseq([Pwhite(1.0, 2.9, 12), Pwhite(1.5, 2.5, 6)]),
 	\gain, 0.2,
-	\voice_sweep, Pseq([0.0!12, 1.5!6].flatten),
+	\voice_sweep, Pseq([1.0!12, 1.5!6].flatten),
 	\mod_mult, Prand([0.5, 0.667, 0.75, 1.0, 1.25, 1.333, 1.5], 18),
-	\fm_index, Pseq([Pwhite(0.0, 0.0, 12), Pwhite(10.0, 100.0, 6)]),
-	\voice_sweep_freq, Pwhite(0.0, 1.0, 18),
+	\fm_index, Pseq([Pwhite(0.0, 0.0, 12), Pwhite(50.0, 100.0, 6)]),
+    \voice_sweep_freq, Prand([0.1, 0.25, 0.5], 18),
 );
 
 // melody

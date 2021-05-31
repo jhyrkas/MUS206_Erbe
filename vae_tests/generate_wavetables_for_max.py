@@ -11,38 +11,24 @@ from vae_stft import vae_stft
 
 # will probably add some functions to this so let's make a main
 if __name__ == '__main__' :
-    use_stft = int(sys.argv[1]) == 0
     gain = 0.75
     z_size = 16
     fs = 16000
     length = 3
-    if use_stft :
-        vae = vae_stft()
-        vae.load_state_dict(torch.load('vae_stft_model_params.pytorch'))
-        vae.eval()
-        hop_length = 512
-        n_reps = length * int(fs / hop_length)
-        data_size = 1025
-    else :
-        vae = vae_cqt()
-        vae.load_state_dict(torch.load('vae_cqt_model_params.pytorch'))
-        vae.eval()
-        hop_length = 128
-        n_reps = length * int(fs / hop_length)
-        n_octaves = 7
-        bins_per_octave = 36
-        data_size = 252
-
-    for i in range(10) :
+    vae = vae_stft()
+    vae.load_state_dict(torch.load('vae_stft_model_params.pytorch'))
+    vae.eval()
+    hop_length = 512
+    n_reps = length * int(fs / hop_length)
+    data_size = 1025
+    i = 0
+    while i < 10 :
         z = np.random.normal(size=z_size)
         X_hat = vae.decode(torch.from_numpy(z).float()).detach()
         #X_hat = vae.decode(mu, f0)
         #print(X_hat)
 
-        if use_stft :
-            x_hat = librosa.griffinlim(np.repeat(X_hat.numpy().reshape(data_size,1), n_reps, axis=1))
-        else :
-            x_hat = librosa.griffinlim_cqt(np.repeat(X_hat.detach().numpy().reshape(data_size,1), n_reps, axis=1), sr=fs, hop_length = hop_length, bins_per_octave = bins_per_octave)
+        x_hat = librosa.griffinlim(np.repeat(X_hat.numpy().reshape(data_size,1), n_reps, axis=1))
 
         x_hat = gain * (x_hat / np.max(np.abs(x_hat)))
         f0_hat_frames, voiced_hat, _ = librosa.pyin(x_hat, librosa.note_to_hz('C2'), librosa.note_to_hz('C7'), sr=fs)
@@ -64,13 +50,10 @@ if __name__ == '__main__' :
                 start_index += 1
 
         if start_index + cycle_samps <= len(new_x_hat) :
-            #sd.play(x_hat, fs)
-            #sd.wait()
-            #sig_rep = np.tile(new_x_hat[start_index:start_index+cycle_samps], int(round((3*new_fs)/cycle_samps)))
-            #sd.play(sig_rep * 0.8, new_fs)
-            #sd.wait()
             sf.write('output' + str(i) + '.wav', new_x_hat[start_index:start_index+cycle_samps], 44100) # don't think fs matters?
+            i += 1
         else :
+            # that's an error
             print(new_x_hat[0:cycle_samps])
         
         #sd.play(x, fs)
