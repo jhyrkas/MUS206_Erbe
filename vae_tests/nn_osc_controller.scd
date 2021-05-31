@@ -132,7 +132,7 @@ random_b.action_({
 )
 
 (
-{Splay.ar(Osc.ar(5, 86.1, 0.0, 0.3))}.play;
+{Splay.ar(Osc.ar(4, 86.1, 0.0, 0.3))}.play;
 )
 
 // etude
@@ -157,12 +157,16 @@ SynthDef.new("nn_wavetable", {
 )
 
 (
+var chord_notes, chord_durs1, chord_durs2, melody, melody_durs1, melody_durs2, clock, chord_inst, melody_inst;
+clock = TempoClock.new(60/60);
+//~postBeats = {clock.beats.postln;1};
+//clock.schedAbs(clock.nextBar, {~postBeats.value});
+//~postBeats = {}
 // chords
-var chord_notes, chord_durs1, chord_durs2, notes, durs, note_stream, dur_stream;
-chord_notes = Pseq([[60, 63, 67, 70], [63, 67, 70, 74], [61, 65, 68, 72]], 6);
+chord_notes = Pseq([[60, 63, 67, 70] - 24, [63, 67, 70, 74] - 24, [61, 65, 68, 72] - 24], 6);
 chord_durs1 = Pseq([4, 2, 2], 6);
 chord_durs2 = Pseq([4, 2, 2] - 0.1, 6);
-Pbind(
+chord_inst = Pbind(
 	\instrument, "nn_wavetable",
     \carr_freq, chord_notes.midicps,
     \dur, chord_durs1,
@@ -173,54 +177,31 @@ Pbind(
 	\mod_mult, Prand([0.5, 0.667, 0.75, 1.0, 1.25, 1.333, 1.5], 18),
 	\fm_index, Pseq([Pwhite(0.0, 0.0, 12), Pwhite(10.0, 100.0, 6)]),
 	\voice_sweep_freq, Pwhite(0.0, 1.0, 18),
-).play(quant: TempoClock.default.beats); // don't think quantization is working like i want it to
+);
 
 // melody
-notes = Pseq([Pseq([82, 84, 87, 91] - 24, 4), Pseq([84, 87, 91, 94] - 24, 2), Pseq([84, 85, 89, 92] - 24, 2)], 4);
-durs = Pseq([0.25], 32*4);
+melody = Pseq([Pseq([82, 84, 87, 91] - 24, 4), Pseq([84, 87, 91, 94] - 24, 2), Pseq([84, 85, 89, 92] - 24, 2)], 4);
+melody_durs1 = Pseq([0.25], 32*4);
+melody_durs2 = Pseq([0.23], 32*4);
 
-note_stream = notes.asStream();
-dur_stream = durs.asStream();
+melody_inst = Pbind(
+    \instrument, "nn_wavetable",
+    \carr_freq, melody.midicps,
+    \dur, melody_durs1,
+	\duration, melody_durs2,
+    \voice_center, Pseq([Pwhite(0.0, 3.9, 63), Pwhite(1.0, 2.9, 65)]),
+    \voice_sweep, Pseq([0.0!63, 1.0!65].flatten),
+    \mod_mult, Pwhite(0.5, 20, 128),
+    \fm_index, Pseq([Pwhite(0.0, 0.0, 63), Pwhite(10.0, 100.0, 65)]),
+	\voice_sweep_freq, Pseq([Pwhite(0.0, 0.0, 63), Pwhite(0.25, 5.0, 65)]),
+);
 
-r = Task({
-    var dur, note, i = 0, j = 0;
-
-	// break for first four measures
-	while ({
-		j < 64;
-	}, {
-		0.25.yield;
-		j = j + 1;
-	});
-
-	// now start playing
-    while ({
-        i < 63; // this was supposed to be 64 but i kind of like it at 63
-    }, {
-        dur = dur_stream.next;
-        note = note_stream.next.midicps;
-        Synth("nn_wavetable",
-			[carr_freq: note, duration: dur, voice_center: 4.0 * (100.rand / 100.0)]);
-        dur.yield;
-        i = i + 1;
-    });
-
-	// now start modulating
-    while ({
-        i < 128;
-    }, {
-        dur = dur_stream.next;
-        note = note_stream.next.midicps;
-        Synth("nn_wavetable",
-            [carr_freq: note, fm_index: 190.linrand + 10, duration: dur, mod_mult: 0.5 + 1.5.rand,
-			 voice_center: 1.0 + 2.0* (100.rand / 100.0), voice_sweep: 1.0, voice_sweep_freq: 0.25 + 4.75.rand
-		]);
-        dur.yield;
-        i = i + 1;
-    });
-}).play(quant: TempoClock.default.beats); // don't think quantization is working like i want it to
+chord_inst.play(clock, quant: Quant.new(4, 0, 0));
+melody_inst.play(clock, quant: Quant.new(4, 0, 16));
 )
 
 OSCFunc.trace(true)
 OSCFunc.trace(false)
 TempoClock.default.beats
+
+~postBeats = {}

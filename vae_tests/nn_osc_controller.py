@@ -46,6 +46,7 @@ def update_wavetable(vae) :
     f0_hat_frames, voiced_hat, _ = librosa.pyin(x_hat, librosa.note_to_hz('C2'), librosa.note_to_hz('C7'), sr=fs)
     f0_hat = np.mean(f0_hat_frames[voiced_hat]) if np.sum(voiced_hat) > 10 else 0 # at least 10 voiced frames?
     if f0_hat == 0 :
+        print('F0 ESTIMATION FAILED')
         return False # something here...
     cycle_samps = 512 # for max's cycle object
     new_fs = math.ceil(cycle_samps * f0_hat)
