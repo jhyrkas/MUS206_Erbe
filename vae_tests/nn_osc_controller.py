@@ -87,7 +87,6 @@ def listen_to_timbre(address: str, fixed_args: List[Any], *osc_args: List[Any]) 
     if update_wavetable(vae) :
         gain = 0.5
         fs = 44100
-        print((3*44100) // len(wt))
         sig = np.tile(wt, (3*44100) // len(wt)) * .666
         sd.play(sig, fs)
 

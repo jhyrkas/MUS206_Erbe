@@ -128,12 +128,14 @@ random_b.action_({
 
 // when it's time to play, mess with these parameters
 (
-{VOsc.ar(SinOsc.ar(0.25, 0.0, 1.99, 2.0), 220 + SinOsc.ar(110, 0.0, 10.0), 0.0, 0.3)}.play;
+{VOsc.ar(SinOsc.ar(0.25, 0.0, 1.99, 2.0), 220 + SinOsc.ar(110, 0.0, 0.0), 0.0, 0.3)}.play;
 )
 
 (
-{Splay.ar(Osc.ar(1, 86.1, 0.0, 0.3))}.play;
+{Splay.ar(Osc.ar(5, 86.1, 0.0, 0.3))}.play;
 )
+
+// etude
 
 // synth def
 (
@@ -155,8 +157,25 @@ SynthDef.new("nn_wavetable", {
 )
 
 (
-var notes, durs, note_stream, dur_stream;
+// chords
+var chord_notes, chord_durs1, chord_durs2, notes, durs, note_stream, dur_stream;
+chord_notes = Pseq([[60, 63, 67, 70], [63, 67, 70, 74], [61, 65, 68, 72]], 6);
+chord_durs1 = Pseq([4, 2, 2], 6);
+chord_durs2 = Pseq([4, 2, 2] - 0.1, 6);
+Pbind(
+	\instrument, "nn_wavetable",
+    \carr_freq, chord_notes.midicps,
+    \dur, chord_durs1,
+	\duration, chord_durs2,
+	\voice_center, Pseq([Pwhite(0.0, 3.9, 12), Pwhite(1.5, 2.5, 6)]),
+	\gain, 0.2,
+	\voice_sweep, Pseq([0.0!12, 1.5!6].flatten),
+	\mod_mult, Prand([0.5, 0.667, 0.75, 1.0, 1.25, 1.333, 1.5], 18),
+	\fm_index, Pseq([Pwhite(0.0, 0.0, 12), Pwhite(10.0, 100.0, 6)]),
+	\voice_sweep_freq, Pwhite(0.0, 1.0, 18),
+).play(quant: TempoClock.default.beats); // don't think quantization is working like i want it to
 
+// melody
 notes = Pseq([Pseq([82, 84, 87, 91] - 24, 4), Pseq([84, 87, 91, 94] - 24, 2), Pseq([84, 85, 89, 92] - 24, 2)], 4);
 durs = Pseq([0.25], 32*4);
 
@@ -164,7 +183,17 @@ note_stream = notes.asStream();
 dur_stream = durs.asStream();
 
 r = Task({
-    var dur, note, i = 0;
+    var dur, note, i = 0, j = 0;
+
+	// break for first four measures
+	while ({
+		j < 64;
+	}, {
+		0.25.yield;
+		j = j + 1;
+	});
+
+	// now start playing
     while ({
         i < 63; // this was supposed to be 64 but i kind of like it at 63
     }, {
@@ -176,6 +205,7 @@ r = Task({
         i = i + 1;
     });
 
+	// now start modulating
     while ({
         i < 128;
     }, {
@@ -183,7 +213,7 @@ r = Task({
         note = note_stream.next.midicps;
         Synth("nn_wavetable",
             [carr_freq: note, fm_index: 190.linrand + 10, duration: dur, mod_mult: 0.5 + 1.5.rand,
-			 voice_center: 3.0* (100.rand / 100.0), voice_sweep: 1.0, voice_sweep_freq: 0.25 + 4.75.rand
+			 voice_center: 1.0 + 2.0* (100.rand / 100.0), voice_sweep: 1.0, voice_sweep_freq: 0.25 + 4.75.rand
 		]);
         dur.yield;
         i = i + 1;
@@ -193,3 +223,4 @@ r = Task({
 
 OSCFunc.trace(true)
 OSCFunc.trace(false)
+TempoClock.default.beats
