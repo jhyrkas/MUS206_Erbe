@@ -92,7 +92,7 @@ generate_func = {
 
 // GUI
 // dims: x-axis position, y-axis position, x-axis length, y-axis length
-window = Window.new("Knobs", Rect(640,730,270,270)).front;
+window = Window.new("Wavetable Control", Rect(640,730,270,270)).front;
 ks = Array.new(16);
 4.do {
 	| index_i |
