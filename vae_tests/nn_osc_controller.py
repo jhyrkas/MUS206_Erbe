@@ -90,6 +90,13 @@ def listen_to_timbre(address: str, fixed_args: List[Any], *osc_args: List[Any]) 
         fs = 44100
         sig = np.tile(wt, (3*44100) // len(wt)) * .666
         sd.play(sig, fs)
+        # in case the demo doesn't work
+        '''
+        devices = sd.query_devices()
+        for i in range(len(devices)) :
+            if devices[i]['name'] == 'ZoomAudioDevice' :
+                sd.play(sig, fs, device=i)
+        '''
 
 if __name__ == '__main__' :
     # OSC set up
